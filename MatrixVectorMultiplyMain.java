@@ -1,18 +1,22 @@
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
+
 public class MatrixVectorMultiplyMain {
 	public static void main(String[] args) throws Exception {
-		if(args.length != 3) {
-			System.err.println("Usage: MatrixVectorMultiplyMain <input> <output_temp> <output>");
+		if(args.length != 4) {
+			System.err.println("Usage: MatrixVectorMultiplyMain <input1> <input2> <output_temp> <output>");
 			System.exit(-1);
 		}
+
 		int runID = 0;
 		Configuration job1Configuration = new Configuration();
 		Configuration job2Configuration = new Configuration();
@@ -26,11 +30,13 @@ public class MatrixVectorMultiplyMain {
 		*/
 		MultipleInputs.addInputPath(job2, new Path(args[1] + "/matrix-a.txt"), TextInputFormat.class);
 		MultipleInputs.addInputPath(job2, new Path(args[1] + "/matrix-b.txt"), TextInputFormat.class);
+
 		job1.setMapperClass(MatrixVectorMultiplyMapper.class);
 		job1.setReducerClass(MatrixVectorMultiplyReducer.class);
 
 		job1.setOutputKeyClass(IntWritable.class);
 		job1.setOutputValueClass(Text.class);
+
 
 		job1.waitForCompletion(false) == 0)
 		job2Configuration.set("runID", "run-" + runID);
@@ -58,6 +64,6 @@ public class MatrixVectorMultiplyMain {
 		comparison.waitForCompletion(false);
 		System.out.println("Boolean value: " + comparisonConf.getBoolean("isDiffZero"));
 		System.exit(0);
-		}
+		}		
 	}
 }
