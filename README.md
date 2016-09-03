@@ -2,11 +2,11 @@
 Matrix-Vector Multiplication and PageRank computation
 
 ##commit fe14a2d changes
--Now using MultipleInputs  class for
--Added MultipleOutputs implementation
--Added base framework for iterative PageRank computation
--Added Mapper/Reducer for Vector comparison
--Added custom file output names
+- Now using MultipleInputs  class for
+- Added MultipleOutputs implementation
+- Added base framework for iterative PageRank computation
+- Added Mapper/Reducer for Vector comparison
+- Added custom file output names
 
 ## Running
 Inside the folder where the .java files are present, run
