@@ -12,7 +12,7 @@ public class VectorComparisonMapper extends Mapper<LongWritable, Text, IntWritab
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 		String line = value.toString(); 
 		String[] extracts = line.split(",");
-		context.write(new IntWritable(Integer.parseInt(extracts[1].trim())), new IntWritable(extracts[3].trim()));
-		}
+		context.write(new IntWritable(Integer.parseInt(extracts[1].trim())), new IntWritable(Integer.parseInt(extracts[3].trim())));
 	}
 }
+

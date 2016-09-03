@@ -5,13 +5,14 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
 public class MatrixVectorMultiplyReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
 	private MultipleOutputs<IntWritable, Text> multipleOutputs;
 
 	@Override
 	public void setup(Context context) throws IOException, InterruptedException {
-		multipleOutputs = new MultipleOutputs<IntWritable, Text>();
+		multipleOutputs = new MultipleOutputs<IntWritable, Text>(context);
 	}
 
 	@Override
@@ -19,17 +20,17 @@ public class MatrixVectorMultiplyReducer extends Reducer<IntWritable, Text, IntW
 		String line;
 		String[] extracts;
 
-		int bVal;
+		int bVal = -2;
 
 		for(Text value : values) {
 			line = value.toString();
 			extracts = line.split(","); //Input: Matrix, i, value
 			if(extracts[0].trim().equals("b")) {
-				bVal = Float.parseFloat(extracts[2].trim());
+				bVal = Integer.parseInt(extracts[2].trim());
 			}
 			else { //Output: i, value
 				//context.write(new IntWritable(Integer.parseInt(extracts[1])), new Text(extracts[0] + "," + (Integer.parseInt(extracts[2].trim()) * bVal)));
-				multipleOutputs.write("run-" + context.getConfiguration().get("runID")
+				multipleOutputs.write(context.getConfiguration().get("runID")
 				                      , new IntWritable(Integer.parseInt(extracts[1]))
 				                      , new Text(extracts[0] + "," + (Integer.parseInt(extracts[2].trim()) * bVal)));
 			}

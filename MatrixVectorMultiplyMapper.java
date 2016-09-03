@@ -11,7 +11,7 @@ public class MatrixVectorMultiplyMapper extends Mapper<LongWritable, Text, IntWr
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 		String line = value.toString(); //Matrix, i, j, value
-		String[] extracts = line.split("\t");
+		String[] extracts = line.split(",");
 		context.write(new IntWritable(Integer.parseInt(extracts[2].trim())), new Text(extracts[0].trim() + "," + extracts[1].trim() + "," + extracts[3].trim()));
 		}
 	}
