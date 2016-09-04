@@ -9,21 +9,28 @@ import org.apache.hadoop.io.Text;
 
 public class VectorComparisonReducer extends Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
 	
-	//private boolean isDiffZero = true;
-	
+	private int diffCount = 1;
+	private double difference = 0.0;
 	@Override
 	public void reduce(IntWritable key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
-		double difference = 0.0;
-		//context.getConfiguration().setBoolean("isDiffZero", false);
+		
 		for(DoubleWritable value : values) {			
 			difference = value.get() - difference;
 		}
-		if(difference < 0)
-			difference = -difference;
-		if(new Double(difference).toString().startsWith("0.00")) {
-			context.getConfiguration().set("isDiffZero", "true");
+		context.write(key, new DoubleWritable(difference));
+		if(new Double(Math.abs(difference)).toString().startsWith("0.00") == true 
+		   || new Double(Math.abs(difference)).toString().equals("0.0")) {
 			context.write(key, new DoubleWritable(difference));
+			System.out.println(diffCount++ + ": " + difference);
 		}
 	}
+	
+	@Override
+	public void cleanup(Context context) throws IOException, InterruptedException {
+		if(diffCount == 4) {
+			context.getCounter(DiffCounter.DIFF_COUNT).increment(diffCount);
+		}
+	}
+	
 }
 
