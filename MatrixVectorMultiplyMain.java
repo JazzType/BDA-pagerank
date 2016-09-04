@@ -1,6 +1,6 @@
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -19,70 +19,78 @@ public class MatrixVectorMultiplyMain {
 		}
 
 		int runID = 0;
-		Configuration job1Configuration = new Configuration();
-		Configuration job2Configuration = new Configuration();
-		job1Configuration.set("runID", "run" + runID);
-		Job job1 = Job.getInstance(job1Configuration);
-		job1.setJarByClass(MatrixVectorMultiplyMain.class);
-		job1.setJobName("MapReduce " + runID + ": 1/2");
-		/*
-		FileInputFormat.addInputPath(job1, new Path(args[0]));
-		*/
-		//FileOutputFormat.setOutputPath(job1, new Path(args[1]));
+		Configuration multiplyJobConfiguration = new Configuration();
+		Configuration sumJobConfiguration = new Configuration();
+		Configuration comparisonConfiguration = new Configuration();
+		Job multiplyJob, sumJob, comparison;
 		
-		MultipleInputs.addInputPath(job1, new Path(args[0] + "/matrix-a.txt"), TextInputFormat.class);
-		MultipleInputs.addInputPath(job1, new Path(args[0] + "/matrix-b.txt"), TextInputFormat.class);
-		FileOutputFormat.setOutputPath(job1, new Path(args[1]));
-		job1.setMapperClass(MatrixVectorMultiplyMapper.class);
-		job1.setReducerClass(MatrixVectorMultiplyReducer.class);
+		do {
+			multiplyJobConfiguration.set("runID", "run" + runID);
+			multiplyJob = Job.getInstance(multiplyJobConfiguration);
+			multiplyJob.setJarByClass(MatrixVectorMultiplyMain.class);
+			multiplyJob.setJobName("MapReduce " + runID + ": 1/2");
+			
+			MultipleInputs.addInputPath(multiplyJob, new Path(args[0] + "/matrix-a.txt"), TextInputFormat.class);
+			if(runID == 0) {
+				MultipleInputs.addInputPath(multiplyJob, new Path(args[0] + "/matrix-b.txt"), TextInputFormat.class);
+			}
+			else {
+				MultipleInputs.addInputPath(multiplyJob, new Path(args[2] + "/run" + (runID - 1)), TextInputFormat.class);
+			}
+			FileOutputFormat.setOutputPath(multiplyJob, new Path(args[1] + "/run" + runID));
+			multiplyJob.setMapperClass(MatrixVectorMultiplyMapper.class);
+			multiplyJob.setReducerClass(MatrixVectorMultiplyReducer.class);
 
-		job1.setOutputKeyClass(IntWritable.class);
-		job1.setOutputValueClass(Text.class);
+			multiplyJob.setOutputKeyClass(IntWritable.class);
+			multiplyJob.setOutputValueClass(Text.class);
+			
+			//MultipleOutputs.addNamedOutput(multiplyJob, "run" + runID,TextOutputFormat.class, IntWritable.class, Text.class);
 		
-		MultipleOutputs.addNamedOutput(job1, "run0",TextOutputFormat.class, IntWritable.class, Text.class);
-	
-		job1.waitForCompletion(false);
-		//runID++;
-		job2Configuration.set("runID", "run" + runID);
-		Job job2 = Job.getInstance(job2Configuration);	
-		job2.setJarByClass(MatrixVectorMultiplyMain.class);
-		job2.setJobName("MapReduce " + runID + ": 2/2");
-		
-		FileInputFormat.addInputPath(job2, new Path(args[1] + "/run" + runID + "-r-00000"));
-		FileOutputFormat.setOutputPath(job2, new Path(args[2]));
-	
-/*			MultipleInputs.addInputPath(job2, new Path(args[2] + "/run-" + runID-1 + "-r-00000"), TextInputFormat.class);
-		MultipleInputs.addInputPath(job2, new Path(args[2] + "/run-" + runID + "-r-00000"), TextInputFormat.class);
+			multiplyJob.waitForCompletion(true);
+			
+			/*  */
+			sumJobConfiguration.set("runID", "run" + runID);
+			sumJob = Job.getInstance(sumJobConfiguration);	
+			sumJob.setJarByClass(MatrixVectorMultiplyMain.class);
+			sumJob.setJobName("MapReduce " + runID + ": 2/2");
+			
+/*			FileInputFormat.addInputPath(sumJob, new Path(args[1] + "-" + runID + "/run" + runID + "-r-00000"));
+			FileOutputFormat.setOutputPath(sumJob, new Path(args[2] + "-" + runID));
 */
-		job2.setMapperClass(MatrixVectorMultiplyAccumulateMapper.class);
-		job2.setReducerClass(MatrixVectorMultiplyAccumulateReducer.class);
+			FileInputFormat.addInputPath(sumJob, new Path(args[1] + "/run" + runID));	
+			FileOutputFormat.setOutputPath(sumJob, new Path(args[2] + "/run" + runID));
+			sumJob.setMapperClass(MatrixVectorMultiplyAccumulateMapper.class);
+			sumJob.setReducerClass(MatrixVectorMultiplyAccumulateReducer.class);
 
-		MultipleOutputs.addNamedOutput(job2, "run0",TextOutputFormat.class, Text.class, Text.class);
+			//MultipleOutputs.addNamedOutput(sumJob, "run" + runID,TextOutputFormat.class, Text.class, Text.class);
 
-		job2.setOutputKeyClass(IntWritable.class);
-		job2.setOutputValueClass(IntWritable.class);			
-		
-		job2.waitForCompletion(false);
-
-		Configuration comparisonConf = new Configuration();
-		comparisonConf.set("runID", "diff" + runID);
-		comparisonConf.setBoolean("isDiffZero", false);
-		Job comparison = Job.getInstance(comparisonConf);	
-		comparison.setJarByClass(MatrixVectorMultiplyMain.class);
-		comparison.setJobName("MapReduce " + (runID) + ": 2/2");
-		
-		comparison.setMapperClass(VectorComparisonMapper.class);
-		comparison.setReducerClass(VectorComparisonReducer.class);
-
-		comparison.setOutputKeyClass(IntWritable.class);
-		comparison.setOutputValueClass(IntWritable.class);
-		
-		MultipleOutputs.addNamedOutput(comparison, "diff0",TextOutputFormat.class, IntWritable.class, IntWritable.class);
-		
-		FileInputFormat.addInputPath(comparison, new Path(args[2] + "/run" + runID + "-r-00000"));
-		FileOutputFormat.setOutputPath(comparison, new Path(args[2] + "-diff"));
-		comparison.waitForCompletion(false);
-		System.out.println("Boolean value: " + comparisonConf.getBoolean("isDiffZero", true));
+			sumJob.setOutputKeyClass(IntWritable.class);
+			sumJob.setOutputValueClass(DoubleWritable.class);			
+			
+			sumJob.waitForCompletion(true);
+			comparisonConfiguration.set("isDiffZero","false");
+			if(runID != 0) {
+				comparisonConfiguration.set("runID", "diff" + runID);
+				comparison = Job.getInstance(comparisonConfiguration);	
+				comparison.setJarByClass(MatrixVectorMultiplyMain.class);
+				comparison.setJobName("MapReduce " + (runID) + ": 2/2");
+			
+				comparison.setMapperClass(VectorComparisonMapper.class);
+				comparison.setReducerClass(VectorComparisonReducer.class);
+	
+				comparison.setOutputKeyClass(IntWritable.class);
+				comparison.setOutputValueClass(DoubleWritable.class);
+			
+				MultipleInputs.addInputPath(comparison, new Path(args[2] + "/run" + (runID - 1) + "/part-r-00000"), TextInputFormat.class);			
+				MultipleInputs.addInputPath(comparison, new Path(args[2] + "/run" + runID + "/part-r-00000"), TextInputFormat.class);
+//			FileInputFormat.addInputPath(comparison, new Path(args[2] + "/run" + runID));
+				FileOutputFormat.setOutputPath(comparison, new Path(args[2] + "/diff" + runID));
+				comparison.waitForCompletion(true);
+				System.out.println("Boolean value: " + comparisonConfiguration.get("isDiffZero", "junk"));
+			}
+			runID++;
+		} while(!comparisonConfiguration.get("isDiffZero").equals("true"));
+		System.out.println("Output to runID: " + runID);
 		System.exit(0);
 	}		
 }
