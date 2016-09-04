@@ -1,6 +1,12 @@
 # BDA-pagerank
 Matrix-Vector Multiplication and PageRank computation
 
+##commit d815a3f changes
+- Tidy up
+- Removed unnecessary imports
+- Eigenvector calculation (according to [this](http://stackoverflow.com/a/774221) answer on SO)
+- Final commit, merged master and dev
+
 ##commit fe14a2d changes
 - Now using MultipleInputs class for input
 - Added MultipleOutputs implementation
