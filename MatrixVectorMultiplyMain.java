@@ -42,13 +42,13 @@ public class MatrixVectorMultiplyMain {
 		MultipleOutputs.addNamedOutput(job1, "run0",TextOutputFormat.class, IntWritable.class, Text.class);
 	
 		job1.waitForCompletion(false);
-		runID++;
+		//runID++;
 		job2Configuration.set("runID", "run" + runID);
 		Job job2 = Job.getInstance(job2Configuration);	
 		job2.setJarByClass(MatrixVectorMultiplyMain.class);
-		job2.setJobName("MapReduce " + (runID-1) + ": 2/2");
+		job2.setJobName("MapReduce " + runID + ": 2/2");
 		
-		FileInputFormat.addInputPath(job2, new Path(args[1] + "/run" + (runID-1) + "-r-00000"));
+		FileInputFormat.addInputPath(job2, new Path(args[1] + "/run" + runID + "-r-00000"));
 		FileOutputFormat.setOutputPath(job2, new Path(args[2]));
 	
 /*			MultipleInputs.addInputPath(job2, new Path(args[2] + "/run-" + runID-1 + "-r-00000"), TextInputFormat.class);
@@ -66,6 +66,7 @@ public class MatrixVectorMultiplyMain {
 
 		Configuration comparisonConf = new Configuration();
 		comparisonConf.set("runID", "diff" + runID);
+		comparisonConf.setBoolean("isDiffZero", false);
 		Job comparison = Job.getInstance(comparisonConf);	
 		comparison.setJarByClass(MatrixVectorMultiplyMain.class);
 		comparison.setJobName("MapReduce " + (runID) + ": 2/2");
@@ -78,10 +79,10 @@ public class MatrixVectorMultiplyMain {
 		
 		MultipleOutputs.addNamedOutput(comparison, "diff0",TextOutputFormat.class, IntWritable.class, IntWritable.class);
 		
-		FileInputFormat.addInputPath(comparison, new Path(args[2] + "/run" + (runID-1) + "-r-00000"));
+		FileInputFormat.addInputPath(comparison, new Path(args[2] + "/run" + runID + "-r-00000"));
 		FileOutputFormat.setOutputPath(comparison, new Path(args[2] + "-diff"));
 		comparison.waitForCompletion(false);
-		System.out.println("Boolean value: " + comparisonConf.getBoolean("isDiffZero", false));
+		System.out.println("Boolean value: " + comparisonConf.getBoolean("isDiffZero", true));
 		System.exit(0);
 	}		
 }

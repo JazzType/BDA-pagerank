@@ -24,14 +24,15 @@ public class VectorComparisonReducer extends Reducer<IntWritable, IntWritable, I
 			}
 			if(difference != 0) {
 				context.getConfiguration().setBoolean("isDiffZero", false);
+				//break;
 			}
-			else { //Output: i, value
+			/*else { //Output: i, value
 				//context.write(key, new IntWritable(difference));
 				multipleOutputs.write(context.getConfiguration().get("runID")
 				                      , key
 				                      , new IntWritable(difference));
         
-		}
+		}*/
 	}
 	
 	@Override
